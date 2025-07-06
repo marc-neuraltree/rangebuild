@@ -1,0 +1,110 @@
+# Import the Active Directory module
+Import-Module ActiveDirectory
+
+# Define the OUs to be created
+$OUs = @("IT", "HR", "Finance", "Research", "Users", "Executive")
+
+# Create the OUs
+foreach ($OU in $OUs) {
+    New-ADOrganizationalUnit -Name $OU -Path "DC=yourdomain,DC=com" -ProtectedFromAccidentalDeletion $false
+}
+
+# Define the users to be created for each OU
+$users = @{
+    "IT" = @(
+        @{FirstName="John"; LastName="Smith"},
+        @{FirstName="Jane"; LastName="Johnson"},
+        @{FirstName="Michael"; LastName="Williams"},
+        @{FirstName="Emily"; LastName="Jones"},
+        @{FirstName="Chris"; LastName="Brown"},
+        @{FirstName="Sarah"; LastName="Davis"}
+    )
+    "HR" = @(
+        @{FirstName="David"; LastName="Miller"},
+        @{FirstName="Laura"; LastName="Wilson"},
+        @{FirstName="Robert"; LastName="Moore"},
+        @{FirstName="Jessica"; LastName="Taylor"},
+        @{FirstName="John"; LastName="Anderson"}
+    )
+    "Finance" = @(
+        @{FirstName="Jane"; LastName="Thomas"},
+        @{FirstName="Michael"; LastName="Jackson"},
+        @{FirstName="Emily"; LastName="White"},
+        @{FirstName="Chris"; LastName="Harris"},
+        @{FirstName="Sarah"; LastName="Martin"}
+    )
+    "Research" = @(
+        @{FirstName="David"; LastName="Thompson"},
+        @{FirstName="Laura"; LastName="Garcia"},
+        @{FirstName="Robert"; LastName="Martinez"},
+        @{FirstName="Jessica"; LastName="Robinson"},
+        @{FirstName="John"; LastName="Clark"},
+        @{FirstName="Jane"; LastName="Rodriguez"},
+        @{FirstName="Michael"; LastName="Lewis"},
+        @{FirstName="Emily"; LastName="Lee"}
+    )
+    "Users" = @(
+        @{FirstName="Chris"; LastName="Walker"},
+        @{FirstName="Sarah"; LastName="Hall"},
+        @{FirstName="David"; LastName="Allen"},
+        @{FirstName="Laura"; LastName="Young"},
+        @{FirstName="Robert"; LastName="Hernandez"},
+        @{FirstName="Jessica"; LastName="King"},
+        @{FirstName="John"; LastName="Wright"},
+        @{FirstName="Jane"; LastName="Lopez"},
+        @{FirstName="Michael"; LastName="Hill"},
+        @{FirstName="Emily"; LastName="Scott"},
+        @{FirstName="Chris"; LastName="Green"},
+        @{FirstName="Sarah"; LastName="Adams"},
+        @{FirstName="David"; LastName="Baker"},
+        @{FirstName="Laura"; LastName="Gonzalez"},
+        @{FirstName="Robert"; LastName="Nelson"},
+        @{FirstName="Jessica"; LastName="Carter"},
+        @{FirstName="John"; LastName="Mitchell"},
+        @{FirstName="Jane"; LastName="Perez"},
+        @{FirstName="Michael"; LastName="Roberts"},
+        @{FirstName="Emily"; LastName="Turner"}
+    )
+    "Executive" = @(
+        @{FirstName="Chris"; LastName="Phillips"},
+        @{FirstName="Sarah"; LastName="Campbell"},
+        @{FirstName="David"; LastName="Parker"},
+        @{FirstName="Laura"; LastName="Evans"},
+        @{FirstName="Robert"; LastName="Edwards"}
+    )
+}
+
+# Function to create users in a given OU
+function Create-Users($OU, $users) {
+    foreach ($user in $users) {
+        $firstName = $user.FirstName
+        $lastName = $user.LastName
+        $username = "$firstName.$lastName"
+
+        # Ensure the username is unique by appending a number if necessary
+        $count = 1
+        while (Get-ADUser -Filter { SamAccountName -eq $username }) {
+            $username = "$firstName.$lastName$count"
+            $count++
+        }
+
+        # Create the user
+        New-ADUser -Name "$firstName $lastName" `
+                   -GivenName $firstName `
+                   -Surname $lastName `
+                   -SamAccountName $username `
+                   -UserPrincipalName "$username@yourdomain.com" `
+                   -Path "OU=$OU,DC=yourdomain,DC=com" `
+                   -AccountPassword (ConvertTo-SecureString "Password123" -AsPlainText -Force) `
+                   -Enabled $true
+    }
+}
+
+# Create users for each OU
+foreach ($OU in $OUs) {
+    Create-Users $OU $users[$OU]
+}
+
+# End of script
+
+
