@@ -29,13 +29,13 @@
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
 # iRedMail version to install. Check https://www.iredmail.org/download.html for the latest.
-IREDMAIL_VERSION="1.6.8"
+IREDMAIL_VERSION="1.7.4"
 
 # Set your server's Fully Qualified Domain Name (FQDN). e.g., "mail.yourdomain.com"
-FQDN="mail.example.com"
+FQDN="webmail.beleng1.local"
 
 # Set your primary mail domain. e.g., "yourdomain.com"
-FIRST_MAIL_DOMAIN="example.com"
+FIRST_MAIL_DOMAIN="beleng1.local"
 
 # Set the password for the postmaster@<your_domain.com> admin account.
 # USE A STRONG, UNIQUE PASSWORD.
