@@ -1,5 +1,5 @@
 # List of target computers
-$computers = @("T1-WIN10-1", "T1-WIN10-2", "T1-WIN10-3", "T1-WIN10-4", "T1-WIN10-5")
+$computers = @("T1-WIN10-01", "T1-WIN10-2", "T1-WIN10-3", "T1-WIN10-4", "T1-WIN10-5")
 
 # Source file share and file names
 $sourcePath = "\\file\RANGE"
