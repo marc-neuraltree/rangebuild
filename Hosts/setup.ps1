@@ -46,7 +46,7 @@ foreach ($computer in $computers) {
             Set-Location $dest
 
             Write-Host "Installing Sysmon..." -ForegroundColor Yellow
-            .\Sysmon64.exe -i -accepteula -c sysmonconfig.xml
+            .\Sysmon64.exe -accepteula -i sysmonconfig.xml
 
             Write-Host "Starting Elastic Agent..." -ForegroundColor Yellow
             Start-Process "$dest\elastic_agent.exe" -ArgumentList "-install" -Wait
@@ -68,6 +68,6 @@ foreach ($computer in $computers) {
         Write-Host "Finished with $computer." -ForegroundColor Cyan
     }
     catch {
-        Write-Host "Error connecting to $computer: $_" -ForegroundColor Red
+        Write-Host "Error connecting to $computer" -ForegroundColor Red
     }
 }
