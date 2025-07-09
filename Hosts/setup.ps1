@@ -1,57 +1,73 @@
 # List of target computers
-$computers = @("T1-WIN10-01", "T1-WIN10-2", "T1-WIN10-3", "T1-WIN10-4", "T1-WIN10-5")
+$computers = @("T1-WIN10-1", "T1-WIN10-2", "T1-WIN10-3", "T1-WIN10-4", "T1-WIN10-5")
 
-# Source file share and file names
-$sourcePath = "\\file\RANGE"
+# Local path to the source files (from file share to admin's machine beforehand)
+$sourcePath = "\\file\RANGE"  # Or download these to local disk first
+$localTempPath = "$env:TEMP\AgentDeploy"
+
+# Destination on remote machines
+$remoteDest = "C:\Users\Public"
+
+# List of files to deploy
 $fileNames = @("elastic_agent.exe", "Sysmon64.exe", "sysmonconfig.xml")
-$destinationPath = "C:\Users\Public"
 
-# Domain credentials (prompt)
-$cred = Get-Credential -Message "Enter DOMAIN credentials to access file share and remote systems"
+# Prompt for domain credentials (used for remote session, not file share)
+$cred = Get-Credential -Message "Enter domain credentials for remote connection"
 
-# Loop through each computer
+# Create temp folder on admin machine if needed
+if (-not (Test-Path $localTempPath)) {
+    New-Item -Path $localTempPath -ItemType Directory -Force | Out-Null
+}
+
+# Copy files from share to local admin machine once
+foreach ($file in $fileNames) {
+    $sourceFile = Join-Path -Path $sourcePath -ChildPath $file
+    $destFile = Join-Path -Path $localTempPath -ChildPath $file
+    Copy-Item -Path $sourceFile -Destination $destFile -Force
+}
+
+# Main loop for each remote computer
 foreach ($computer in $computers) {
     Write-Host "`nConnecting to $computer..." -ForegroundColor Cyan
 
-    Invoke-Command -ComputerName $computer -Credential $cred -ScriptBlock {
-        param ($src, $files, $dest)
+    try {
+        $session = New-PSSession -ComputerName $computer -Credential $cred
 
-        # Ensure destination folder exists
-        if (-not (Test-Path $dest)) {
-            New-Item -Path $dest -ItemType Directory -Force
+        # Copy files to remote machine
+        foreach ($file in $fileNames) {
+            $localFile = Join-Path $localTempPath $file
+            $remoteFile = Join-Path $remoteDest $file
+            Copy-Item -Path $localFile -Destination $remoteFile -ToSession $session -Force
         }
 
-        # Copy files from share to local
-        foreach ($file in $files) {
-            $sourceFile = Join-Path -Path $src -ChildPath $file
-            $destFile = Join-Path -Path $dest -ChildPath $file
-            Copy-Item -Path $sourceFile -Destination $destFile -Force
-        }
+        # Run remote setup commands
+        Invoke-Command -Session $session -ScriptBlock {
+            $dest = "C:\Users\Public"
+            Set-Location $dest
 
-        # Change to destination directory
-        Set-Location $dest
+            Write-Host "Installing Sysmon..." -ForegroundColor Yellow
+            .\Sysmon64.exe -i -accepteula -c sysmonconfig.xml
 
-        # Run Sysmon
-        Write-Host "Installing Sysmon..." -ForegroundColor Yellow
-        .\Sysmon64.exe -i -accepteula -c sysmonconfig.xml
+            Write-Host "Starting Elastic Agent..." -ForegroundColor Yellow
+            Start-Process "$dest\elastic_agent.exe" -ArgumentList "-install" -Wait
 
-        # Run Elastic Agent (this assumes silent install or self-starting agent)
-        Write-Host "Starting Elastic Agent..." -ForegroundColor Yellow
-        Start-Process "$dest\elastic_agent.exe" -ArgumentList "-install" -Wait
+            # Check service status
+            $services = @("Sysmon64", "Elastic Agent")
 
-        # Validate services are running
-        $services = @("Sysmon64", "Elastic Agent")
-
-        foreach ($svc in $services) {
-            $status = Get-Service -Name $svc -ErrorAction SilentlyContinue
-            if ($status.Status -eq 'Running') {
-                Write-Host "$svc is running." -ForegroundColor Green
-            } else {
-                Write-Host "$svc is NOT running." -ForegroundColor Red
+            foreach ($svc in $services) {
+                $status = Get-Service -Name $svc -ErrorAction SilentlyContinue
+                if ($status.Status -eq 'Running') {
+                    Write-Host "$svc is running." -ForegroundColor Green
+                } else {
+                    Write-Host "$svc is NOT running." -ForegroundColor Red
+                }
             }
         }
 
-    } -ArgumentList $sourcePath, $fileNames, $destinationPath -ErrorAction Stop
-
-    Write-Host "Finished with $computer." -ForegroundColor Cyan
+        Remove-PSSession $session
+        Write-Host "Finished with $computer." -ForegroundColor Cyan
+    }
+    catch {
+        Write-Host "Error connecting to $computer: $_" -ForegroundColor Red
+    }
 }
