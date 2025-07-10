@@ -1,5 +1,5 @@
 # List of target computers
-$computers = @("T1-WIN10-1", "T1-WIN10-2", "T1-WIN10-3", "T1-WIN10-4", "T1-WIN10-5")
+$computers = @("T2-WIN10-01", "T2-WIN-2", "T2-WIN-3", "T2-WIN-4", "T2-WIN10-5")
 
 # Local path to the source files (from file share to admin's machine beforehand)
 $sourcePath = "\\file\RANGE"  # Or download these to local disk first
